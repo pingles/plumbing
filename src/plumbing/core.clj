@@ -1,7 +1,8 @@
 (ns plumbing.core
   {:doc "General purpose functions"
    :author "Aria Haghighi <me@aria42.com>. Many fns lifted
-   from existing clj-sys projects."})
+   from existing clj-sys and other projects."}
+  (:require [clojure.contrib.logging :as log]))
 
 ;;
 ;;  map functions
@@ -126,3 +127,36 @@
               (with-meta `(try-silent (~(first form) ~@(next form)  ~x)) (meta form))
               `(try-silent (~form ~x))))
   ([x form & more] `(when-let [f# (-?>> ~x ~form)] (-?>> f# ~@more) )))
+
+
+;; Control
+
+(defn retry [retries f & args]
+  "Retries applying f to args based on the number of retries.
+  catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f."
+  (try (apply f args)
+    (catch java.lang.Exception _
+      (if (> retries 0)
+        (apply retry (- retries 1) f args)
+        {:fail 1}))))
+
+
+;;
+;; Logging
+;;
+
+;; (defn set-log-level! [level]
+;;   (case log/*impl-name*
+	
+;; 	(-> (org.apache.log4j.Logger/getRootLogger)
+;; 	    (.setLevel
+;; 	      (case level
+;; 		    :all org.apache.log4j.Level/ALL
+;; 		    :trace org.apache.log4j.Level/TRACE
+;; 		    :debug org.apache.log4j.Level/DEBUG
+;; 		    :info  org.apache.log4j.Level/INFO
+;; 		    :warn  org.apache.log4j.Level/WARN
+;; 		    :error org.apache.log4j.Level/ERROR
+;; 		    :fatal org.apache.log4j.Level/FATAL)))
+
+;; 	))
