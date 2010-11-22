@@ -8,13 +8,15 @@
   (freeze [this o] "freeze object o into self")
   (thaw [this] "retrieve object"))
 
+(defn to-bytes [o] (serialize o))
+
+(defn from-bytes [^bytes bs]
+  (deserialize bs :eof))
+
 (extend-protocol Freezer
 
   java.io.File
   (freeze [this o]
-	  (-> o serialize (copy this)))
+	  (-> o to-bytes (copy this)))
   (thaw [this]
-	(-> this to-byte-array (deserialize :eof)))
-
-  String
-  (freeze [this o]))
+	(-> this to-byte-array from-bytes)))
