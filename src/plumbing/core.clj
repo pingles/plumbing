@@ -128,6 +128,15 @@
               `(try-silent (~form ~x))))
   ([x form & more] `(when-let [f# (-?>> ~x ~form)] (-?>> f# ~@more) )))
 
+;; Core Protocols
+
+(defprotocol ToSeqable
+  (to-seq [this] "the protocol version of seqable, temporary
+                  until clojure makes Seqable a protocol"))
+
+(extend-protocol ToSeqable
+  clojure.lang.Seqable
+  (to-seq [this] (seq this)))
 
 ;; Control
 
@@ -136,10 +145,28 @@
   catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f."
   (try (apply f args)
     (catch java.lang.Exception _
-      (if (> retries 0)
-        (apply retry (- retries 1) f args)
-        {:fail 1}))))
+      (if (zero? retries)
+	{:fail 1}
+        (apply retry (- retries 1) f args)))))
 
+(defn find-first
+  ([f coll]
+     (first (filter f coll)))
+  ([coll] (find-first identity coll)))
+
+(defn with-timeout
+  "tries to execute (apply f args)
+   in secs, and throws TimeOut exception
+   if it fails. Can capture exception
+   with try-silent"
+  [secs f & args]
+  (let [f (future (apply f args))]
+    (.get f (long (* secs 1000))
+		      (java.util.concurrent.TimeUnit/MILLISECONDS))))
+
+(defn with-silent-timeout
+  [secs f & args]
+  (try-silent (apply with-timeout secs f args)))
 
 ;;
 ;; Logging
