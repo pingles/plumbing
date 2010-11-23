@@ -146,7 +146,7 @@
   (try (apply f args)
     (catch java.lang.Exception _
       (if (zero? retries)
-	{:fail 1}
+	:fail
         (apply retry (- retries 1) f args)))))
 
 (defn find-first
