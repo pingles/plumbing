@@ -94,11 +94,19 @@
   (if x x default))
 
 (defmacro try-silent
-  "evaluates a form, returning default if evaluating the form throws an exception. The
-   one arg version uses nil as the default. If the result of the form is nil, returns
-   default."
+  "evaluates a form, returning nil if evaluating the form throws an exception." 
   [f]
   `(try ~f (catch Exception e# nil)))
+
+;; (defmacro try-log
+;;   "like try-silent except logs msg with level (defaults to :error)
+;;    on exception, returning nil"
+;;   [f & [msg level]]
+;;   `(try ~f
+;; 	(catch Exception e#
+;; 	  (log/log (or ~level :error)   )
+;; 	  (log/log (or ~level :error) msg)
+;; 	  nil)))
 
 (defn maybe-comp
   "returns composition of fns as in comp, but

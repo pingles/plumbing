@@ -17,6 +17,7 @@
 
   java.io.File
   (freeze [this o]
-	  (-> o to-bytes (copy this)))
+      (with-open [in (java.io.ByteArrayInputStream. (to-bytes o))]
+	(copy in this)))
   (thaw [this]
 	(-> this to-byte-array from-bytes)))
