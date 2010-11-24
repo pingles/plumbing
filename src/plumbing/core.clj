@@ -98,6 +98,13 @@
   [f]
   `(try ~f (catch Exception e# nil)))
 
+(defn try-update
+  "Tries to perform update function f on (apply f x args)
+  returning x if update throws exception or returns nil"
+  [x f & args]
+  (try (or (apply f x args) x)
+       (catch Exception _ x)))
+
 ;; (defmacro try-log
 ;;   "like try-silent except logs msg with level (defaults to :error)
 ;;    on exception, returning nil"
