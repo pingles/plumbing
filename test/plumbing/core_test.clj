@@ -30,3 +30,10 @@
     (are (-?>> [1 2] (map inc)) [2 3]
 	 (-?>> {:a 1} inc) nil))
 
+(deftest successfull
+  (is (= 10
+    (retry 5 + 4 6))))
+
+(deftest failure
+  (is (= :fail
+    (retry 5 / 4 0))))
