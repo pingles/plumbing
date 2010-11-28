@@ -153,35 +153,53 @@
   clojure.lang.Seqable
   (to-seq [this] (seq this)))
 
-;; Control
+(defn find-first
+  ([f coll]
+     (first (filter f coll)))
+  ([coll] (find-first identity coll)))
 
+;; Control
 (defn retry [retries f & args]
   "Retries applying f to args based on the number of retries.
   catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f."
   (try (apply f args)
     (catch java.lang.Exception _
       (if (zero? retries)
-	:fail
+;;TODO: decide on c.c.condition or roll our own.  throw a proper new RetryException wrapping the nested exception.
+;;http://groups.google.com/group/clojure-dev/browse_thread/thread/734ee59f6cbc1b55
+;;http://dev.clojure.org/display/design/Exception+Handling
+	(throw (java.lang.Exception. "Retry Exception."))
         (apply retry (- retries 1) f args)))))
-
-(defn find-first
-  ([f coll]
-     (first (filter f coll)))
-  ([coll] (find-first identity coll)))
 
 (defn with-timeout
   "tries to execute (apply f args)
    in secs, and throws TimeOut exception
    if it fails. Can capture exception
    with try-silent"
-  [secs f & args]
-  (let [f (future (apply f args))]
-    (.get f (long (* secs 1000))
-		      (java.util.concurrent.TimeUnit/MILLISECONDS))))
+  [secs f]
+  (fn  [& args]
+    (let [f (future (apply f args))]
+      (.get f (long (* secs 1000))
+	    (java.util.concurrent.TimeUnit/MILLISECONDS)))))
 
-(defn with-silent-timeout
-  [secs f & args]
-  (try-silent (apply with-timeout secs f args)))
+(defn with-log [l f]
+  (fn  [& args]
+    (try
+     (apply f args)
+     (catch java.lang.Exception e
+       (l e)))))
+
+(defn with-silent [f]
+  (fn [& args]
+  (try (apply f args)
+       (catch Exception _ nil))))
+
+(defn with-retries [retries f]
+  "Retries applying f to args based on the number of retries.
+  catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f.
+if the last retry fails, rethrows."
+  (fn [& args]
+    (apply retry retries f args)))
 
 ;;
 ;; Logging

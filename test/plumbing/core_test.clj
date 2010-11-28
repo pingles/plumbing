@@ -30,10 +30,56 @@
     (are (-?>> [1 2] (map inc)) [2 3]
 	 (-?>> {:a 1} inc) nil))
 
+(defn atom-logger []
+  (let [a (atom "")
+	l (fn [e] (swap! a (fn [x] (str e))))]
+    [a l]))
+	
+(deftest logging
+  (let [[a l] (atom-logger)
+	f (with-log l /)
+	_ (f 4 0)]
+  (is (= "java.lang.ArithmeticException: Divide by zero" @a))))
+
+(deftest time-out
+  (let [[a l] (atom-logger)
+	f (with-log l
+	    (with-timeout 1 #(Thread/sleep 10000)))
+	_ (f)]
+  (is (= "java.util.concurrent.TimeoutException" @a))))
+
+(defn fake-http-request [n result]
+  (let [retries (atom 0)] 
+    (fn [u]
+      (if (= n @retries)
+	result
+	(do
+	  (swap! retries inc)
+	  (throw (java.lang.RuntimeException. "foo")))))))
+
 (deftest successfull
   (is (= 10
     (retry 5 + 4 6))))
 
 (deftest failure
-  (is (= :fail
-    (retry 5 / 4 0))))
+  (let [[a l] (atom-logger)
+	r (with-log l
+	     (with-retries 5 /))
+        rs (with-silent
+	     (with-retries 5 /))]
+  
+  (is (= "java.lang.Exception: Retry Exception."
+    (r / 4 0)))
+  (is (= nil
+    (rs / 4 0)))))
+
+(deftest http-retries
+  (let [r1 (with-retries 5 (fake-http-request 2 "got it"))
+	[a l] (atom-logger)
+	r2 (with-log l
+	     (with-retries 5 (fake-http-request 6 "got it")))]
+  (is (= "got it"
+	 (r1 "http://fake.ass.url")))
+  (is (= "java.lang.Exception: Retry Exception."
+	 (r2 "http://fake.ass.url")))))
+	 
