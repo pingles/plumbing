@@ -221,14 +221,14 @@ if the last retry fails, rethrows."
 
 ;;TODO: can test with a log appender fake.
 ;;http://www.mail-archive.com/log4j-user@logging.apache.org/msg08646.html
-(defn logger [& [level]]
+(defn logger [& [level keys]]
   (fn [e f args]
     (let [l (or level :debug)
-	  m ((print-all) e f args)]
+	  m ((apply print-all keys) e f args)]
       (log/log l m))))
 
-(defn with-log [f & [level]]
-  (with-ex (logger level) f))
+(defn with-log [f & [level & keys]]
+  (with-ex (logger level keys) f))
 
 ;; Init Logging
 
