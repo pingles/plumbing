@@ -221,9 +221,10 @@ if the last retry fails, rethrows."
 	l (fn [e & args] (swap! a (fn [x] (str e))))]
     [a l]))
 
+;;TODO: we should probably smartly filter the stack traces, and we should also probably not print them all the time, as the logs may blow up to be huge, not sure.
 (defn print-all [e f args]
   (pr-str {:ex (str e)
-	   :stack (.printStackTrace e)
+	   :stack (map str (.getStackTrace e))
 	   :fn (let [m (meta f)]
 		       {:ns (str (:ns m))
 			:name (str (:name m))})
