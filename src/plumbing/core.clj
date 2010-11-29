@@ -204,17 +204,16 @@ if the last retry fails, rethrows."
   `(apply (->> ~f ~@wrappers) ~args))
 
 (defn set-log-level! [level]
-  (case log/*impl-name*
-	(-> (org.apache.log4j.Logger/getRootLogger)
-	    (.setLevel
-	      (case level
-		    :all org.apache.log4j.Level/ALL
-		    :trace org.apache.log4j.Level/TRACE
-		    :debug org.apache.log4j.Level/DEBUG
-		    :info  org.apache.log4j.Level/INFO
-		    :warn  org.apache.log4j.Level/WARN
-		    :error org.apache.log4j.Level/ERROR
-		    :fatal org.apache.log4j.Level/FATAL)))))
+  (-> (org.apache.log4j.Logger/getRootLogger)
+      (.setLevel
+       (case level
+	     :all org.apache.log4j.Level/ALL
+	     :trace org.apache.log4j.Level/TRACE
+	     :debug org.apache.log4j.Level/DEBUG
+	     :info  org.apache.log4j.Level/INFO
+	     :warn  org.apache.log4j.Level/WARN
+	     :error org.apache.log4j.Level/ERROR
+	     :fatal org.apache.log4j.Level/FATAL))))
 
 (defn atom-logger []
   (let [a (atom "")
