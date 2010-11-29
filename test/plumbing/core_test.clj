@@ -25,10 +25,6 @@
 (deftest -?>-test 
   (are (-?> {:a 1} :a inc) 2
        (-?> {:a 1} inc) nil))
-
-(deftest -?>-test 
-    (are (-?>> [1 2] (map inc)) [2 3]
-	 (-?>> {:a 1} inc) nil))
 	
 (deftest logging
   (let [[a l] (atom-logger)
