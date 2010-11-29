@@ -182,17 +182,24 @@
       (.get f (long (* secs 1000))
 	    (java.util.concurrent.TimeUnit/MILLISECONDS)))))
 
-(defn with-log [l f]
+(defn print-all [e f args]
+  (pr-str {:ex (str e)
+	   :stack (.printStackTrace e)
+	   :fn (let [m (meta f)]
+		       {:ns (str (:ns m))
+			:name (str (:name m))})
+	   :args (map pr-str args)}))
+
+(defn with-ex [h f]
+"takes a handler h and a function f."
   (fn  [& args]
     (try
      (apply f args)
      (catch java.lang.Exception e
-       (l e)))))
+       (h e f args)))))
 
 (defn with-silent [f]
-  (fn [& args]
-  (try (apply f args)
-       (catch Exception _ nil))))
+ (with-ex (constantly nil) f))
 
 (defn with-retries [retries f]
   "Retries applying f to args based on the number of retries.
@@ -201,22 +208,20 @@ if the last retry fails, rethrows."
   (fn [& args]
     (apply retry retries f args)))
 
-;;
-;; Logging
-;;
+(defn set-log-level! [level]
+  (case log/*impl-name*
+	(-> (org.apache.log4j.Logger/getRootLogger)
+	    (.setLevel
+	      (case level
+		    :all org.apache.log4j.Level/ALL
+		    :trace org.apache.log4j.Level/TRACE
+		    :debug org.apache.log4j.Level/DEBUG
+		    :info  org.apache.log4j.Level/INFO
+		    :warn  org.apache.log4j.Level/WARN
+		    :error org.apache.log4j.Level/ERROR
+		    :fatal org.apache.log4j.Level/FATAL)))))
 
-;; (defn set-log-level! [level]
-;;   (case log/*impl-name*
-	
-;; 	(-> (org.apache.log4j.Logger/getRootLogger)
-;; 	    (.setLevel
-;; 	      (case level
-;; 		    :all org.apache.log4j.Level/ALL
-;; 		    :trace org.apache.log4j.Level/TRACE
-;; 		    :debug org.apache.log4j.Level/DEBUG
-;; 		    :info  org.apache.log4j.Level/INFO
-;; 		    :warn  org.apache.log4j.Level/WARN
-;; 		    :error org.apache.log4j.Level/ERROR
-;; 		    :fatal org.apache.log4j.Level/FATAL)))
-
-;; 	))
+(defn atom-logger []
+  (let [a (atom "")
+	l (fn [e & args] (swap! a (fn [x] (str e))))]
+    [a l]))

@@ -29,21 +29,16 @@
 (deftest -?>-test 
     (are (-?>> [1 2] (map inc)) [2 3]
 	 (-?>> {:a 1} inc) nil))
-
-(defn atom-logger []
-  (let [a (atom "")
-	l (fn [e] (swap! a (fn [x] (str e))))]
-    [a l]))
 	
 (deftest logging
   (let [[a l] (atom-logger)
-	f (with-log l /)
+	f (with-ex l /)
 	_ (f 4 0)]
   (is (= "java.lang.ArithmeticException: Divide by zero" @a))))
 
 (deftest time-out
   (let [[a l] (atom-logger)
-	f (with-log l
+	f (with-ex l
 	    (with-timeout 1 #(Thread/sleep 10000)))
 	_ (f)]
   (is (= "java.util.concurrent.TimeoutException" @a))))
@@ -63,23 +58,26 @@
 
 (deftest failure
   (let [[a l] (atom-logger)
-	r (with-log l
+	r (with-ex l
 	     (with-retries 5 /))
         rs (with-silent
-	     (with-retries 5 /))]
-  
+	     (with-retries 5 /))]  
   (is (= "java.lang.Exception: Retry Exception."
-    (r / 4 0)))
+    (r 4 0)))
   (is (= nil
-    (rs / 4 0)))))
+    (rs 4 0)))))
+
+(deftest with-print-all
+  (let [r (with-ex print-all /)]
+  (is (= "{:ex \"java.lang.ArithmeticException: Divide by zero\", :stack nil, :fn {:ns \"clojure.core\", :name \"/\"}, :args (\"4\" \"0\")}"
+    (r 4 0)))))
 
 (deftest http-retries
   (let [r1 (with-retries 5 (fake-http-request 2 "got it"))
 	[a l] (atom-logger)
-	r2 (with-log l
+	r2 (with-ex l
 	     (with-retries 5 (fake-http-request 6 "got it")))]
   (is (= "got it"
 	 (r1 "http://fake.ass.url")))
   (is (= "java.lang.Exception: Retry Exception."
 	 (r2 "http://fake.ass.url")))))
-	 
