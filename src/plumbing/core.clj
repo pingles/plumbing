@@ -245,7 +245,7 @@ if the last retry fails, rethrows."
 (defn logger [& [level]]
   (fn [e f args]
     (let [l (or level :debug)
-	  m (print-all e f args)]
+	  m ((print-all) e f args)]
       (log/log l m))))
 
 (defn with-log [f & [level]]
