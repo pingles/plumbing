@@ -200,6 +200,9 @@ if the last retry fails, rethrows."
 (defn with-silent [f]
  (with-ex (constantly nil) f))
 
+(defmacro -->> [args f & wrappers]
+  `(apply (->> ~f ~@wrappers) ~args))
+
 (defn set-log-level! [level]
   (case log/*impl-name*
 	(-> (org.apache.log4j.Logger/getRootLogger)

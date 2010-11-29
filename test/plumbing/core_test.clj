@@ -81,3 +81,7 @@
 	 (r1 "http://fake.ass.url")))
   (is (= "java.lang.Exception: Retry Exception."
 	 (r2 "http://fake.ass.url")))))
+
+(deftest pipeline-compose
+  (is (= 10
+	 (-->> [3 4 2 1] + identity identity))))
