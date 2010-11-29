@@ -1,4 +1,4 @@
-(defproject clj-sys/plumbing "0.1.1-SNAPSHOT"
+(defproject clj-sys/plumbing "0.1.2-SNAPSHOT"
   :description "General purpose functions for clj-sys projects"
   :dependencies [[org.clojure/clojure "1.2.0"]
                  [org.clojure/clojure-contrib "1.2.0"]

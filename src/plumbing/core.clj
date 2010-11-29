@@ -93,55 +93,6 @@
   [x default]
   (if x x default))
 
-(defmacro try-silent
-  "evaluates a form, returning nil if evaluating the form throws an exception." 
-  [f]
-  `(try ~f (catch Exception e# nil)))
-
-(defn try-update
-  "Tries to perform update function f on (apply f x args)
-  returning x if update throws exception or returns nil"
-  [x f & args]
-  (try (or (apply f x args) x)
-       (catch Exception _ x)))
-
-;; (defmacro try-log
-;;   "like try-silent except logs msg with level (defaults to :error)
-;;    on exception, returning nil"
-;;   [f & [msg level]]
-;;   `(try ~f
-;; 	(catch Exception e#
-;; 	  (log/log (or ~level :error)   )
-;; 	  (log/log (or ~level :error) msg)
-;; 	  nil)))
-
-(defn maybe-comp
-  "returns composition of fns as in comp, but
-   returning nil when a given value return"
-  [& fs]
-  (fn [x]
-    (try-silent
-     (reduce
-      #(if (not %1) %1 (%2 %1))
-      x (reverse fs)))))
-
-(defmacro -?>
-  "first position threaded operator which short-circuits
-   on nil or on exception and returns nil in that case"
-  ([x] x)
-  ([x form] (if (seq? form)
-              (with-meta `(try-silent (~(first form) ~x ~@(next form))) (meta form))
-              `(try-silent (~form ~x))))
-  ([x form & more] `(when-let [f# (-?> ~x ~form)] (-?> f# ~@more))))
-
-(defmacro -?>>
-  "last position threaded operator which short-circuits
-   on nil or on exception and returns nil in that case"
-  ([x] x)
-  ([x form] (if (seq? form)
-              (with-meta `(try-silent (~(first form) ~@(next form)  ~x)) (meta form))
-              `(try-silent (~form ~x))))
-  ([x form & more] `(when-let [f# (-?>> ~x ~form)] (-?>> f# ~@more) )))
 
 ;; Core Protocols
 
@@ -159,7 +110,7 @@
   ([coll] (find-first identity coll)))
 
 ;; Control
-(defn retry [retries f & args]
+(defn ^:private retry [retries f & args]
   "Retries applying f to args based on the number of retries.
   catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f."
   (try (apply f args)
@@ -198,7 +149,26 @@ if the last retry fails, rethrows."
        (h e f args)))))
 
 (defn with-silent [f]
- (with-ex (fn [& args] nil) f))
+  (with-ex (fn [& args] nil) f))
+
+(defn maybe-comp
+  "returns composition of fns as in comp, but
+   returning nil when a given value return"
+  [& fs]
+  (fn [x]
+    ((with-silent reduce)
+     #(if (not %1) %1 (%2 %1))
+     x (reverse fs))))
+
+(defmacro -?>
+  "first position threaded operator which short-circuits
+   on nil or on exception and returns nil in that case"
+  ([x] x)
+  ([x form] (if (seq? form)
+              (with-meta `(with-silent ~(first form)) ~x ~@(next form) (meta form))
+              `((with-silent ~form) ~x)))
+  ([x form & more] `(when-let [f# (-?> ~x ~form)] (-?> f# ~@more))))
+
 
 (defmacro -->> [args f & wrappers]
   `(apply (->> ~f ~@wrappers) ~args))
@@ -249,4 +219,8 @@ if the last retry fails, rethrows."
       (log/log l m))))
 
 (defn with-log [f & [level]]
- (with-ex (logger level) f))
+  (with-ex (logger level) f))
+
+;; Init Logging
+
+(org.apache.log4j.BasicConfigurator/configure)
