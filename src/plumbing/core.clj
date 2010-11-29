@@ -218,8 +218,11 @@ if the last retry fails, rethrows."
 	  m ((print-all) e f args)]
       (log/log l m))))
 
-(defn with-log [f & [level]]
-  (with-ex (logger level) f))
+(defn with-log
+  ([f]
+     (with-log :debug f))
+  ([level f]
+     (with-ex (logger level) f)))
 
 ;; Init Logging
 
