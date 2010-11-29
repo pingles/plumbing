@@ -198,7 +198,7 @@ if the last retry fails, rethrows."
        (h e f args)))))
 
 (defn with-silent [f]
- (with-ex (constantly nil) f))
+ (with-ex (fn [& args] nil) f))
 
 (defmacro -->> [args f & wrappers]
   `(apply (->> ~f ~@wrappers) ~args))
@@ -220,14 +220,25 @@ if the last retry fails, rethrows."
 	l (fn [e & args] (swap! a (fn [x] (str e))))]
     [a l]))
 
-;;TODO: we should probably smartly filter the stack traces, and we should also probably not print them all the time, as the logs may blow up to be huge, not sure.
-(defn print-all [e f args]
-  (pr-str {:ex (str e)
-	   :stack (map str (.getStackTrace e))
-	   :fn (let [m (meta f)]
-		       {:ns (str (:ns m))
-			:name (str (:name m))})
-	   :args (map pr-str args)}))
+;;TODO: we should probably smartly filter the stack traces.
+(defn print-all [& keys]
+  (fn [e f args]
+    (let [ks (if (not (empty? keys))
+	       keys
+	       [:ex :stack :fn :args])]
+      (pr-str
+       (into {}
+	     (map (fn [k]
+		    [k
+		     (condp = k
+			     :ex (str e)
+			     :stack
+			     (map str (.getStackTrace e))
+			     :fn (let [m (meta f)]
+				   {:ns (str (:ns m))
+				    :name (str (:name m))})
+			     :args (map pr-str args))])
+		  ks))))))
 
 ;;TODO: can test with a log appender fake.
 ;;http://www.mail-archive.com/log4j-user@logging.apache.org/msg08646.html
