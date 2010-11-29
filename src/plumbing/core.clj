@@ -23,6 +23,11 @@
   [f ks]
   (into {} (for [k ks] [k (f k)])))
 
+(defn map-from-vals
+  "returns map (f v) -> v for vals in vs"
+  [f vs]
+  (into {} (for [v vs] [(f v) v])))
+
 (defn map-from-pairs
   "returns map k -> (f k v) for [k v] in kvs"
   [f kvs]
@@ -110,7 +115,7 @@
   ([coll] (find-first identity coll)))
 
 ;; Control
-(defn ^:private retry [retries f & args]
+(defn  retry [retries f & args]
   "Retries applying f to args based on the number of retries.
   catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f."
   (try (apply f args)
@@ -121,6 +126,11 @@
 ;;http://dev.clojure.org/display/design/Exception+Handling
 	(throw (java.lang.Exception. "Retry Exception."))
         (apply retry (- retries 1) f args)))))
+
+(defn silent [f & args]
+  (try
+    (apply f args)
+    (catch Exception _ nil)))
 
 (defn with-timeout
   "tries to execute (apply f args)
@@ -169,7 +179,6 @@ if the last retry fails, rethrows."
               `((with-silent ~form) ~x)))
   ([x form & more] `(when-let [f# (-?> ~x ~form)] (-?> f# ~@more))))
 
-
 (defmacro -->> [args f & wrappers]
   `(apply (->> ~f ~@wrappers) ~args))
 
@@ -212,17 +221,19 @@ if the last retry fails, rethrows."
 
 ;;TODO: can test with a log appender fake.
 ;;http://www.mail-archive.com/log4j-user@logging.apache.org/msg08646.html
-(defn logger [& [level]]
+(defn logger [& [level keys]]
   (fn [e f args]
     (let [l (or level :debug)
-	  m ((print-all) e f args)]
+	  m ((apply print-all keys) e f args)]
       (log/log l m))))
 
 (defn with-log
   ([f]
-     (with-log :debug f))
+     (with-ex (logger) f))
   ([level f]
-     (with-ex (logger level) f)))
+     (with-ex (logger level) f))
+  ([level keys f]
+     (with-ex (logger level keys) f)))
 
 ;; Init Logging
 
