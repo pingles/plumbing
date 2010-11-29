@@ -182,13 +182,12 @@
       (.get f (long (* secs 1000))
 	    (java.util.concurrent.TimeUnit/MILLISECONDS)))))
 
-(defn print-all [e f args]
-  (pr-str {:ex (str e)
-	   :stack (.printStackTrace e)
-	   :fn (let [m (meta f)]
-		       {:ns (str (:ns m))
-			:name (str (:name m))})
-	   :args (map pr-str args)}))
+(defn with-retries [retries f]
+  "Retries applying f to args based on the number of retries.
+  catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f.
+if the last retry fails, rethrows."
+  (fn [& args]
+    (apply retry retries f args)))
 
 (defn with-ex [h f]
 "takes a handler h and a function f."
@@ -200,13 +199,6 @@
 
 (defn with-silent [f]
  (with-ex (constantly nil) f))
-
-(defn with-retries [retries f]
-  "Retries applying f to args based on the number of retries.
-  catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f.
-if the last retry fails, rethrows."
-  (fn [& args]
-    (apply retry retries f args)))
 
 (defn set-log-level! [level]
   (case log/*impl-name*
@@ -225,3 +217,22 @@ if the last retry fails, rethrows."
   (let [a (atom "")
 	l (fn [e & args] (swap! a (fn [x] (str e))))]
     [a l]))
+
+(defn print-all [e f args]
+  (pr-str {:ex (str e)
+	   :stack (.printStackTrace e)
+	   :fn (let [m (meta f)]
+		       {:ns (str (:ns m))
+			:name (str (:name m))})
+	   :args (map pr-str args)}))
+
+;;TODO: can test with a log appender fake.
+;;http://www.mail-archive.com/log4j-user@logging.apache.org/msg08646.html
+(defn logger [& [level]]
+  (fn [e f args]
+    (let [l (or level :debug)
+	  m (print-all e f args)]
+      (log/log l m))))
+
+(defn with-log [f & [level]]
+ (with-ex (logger level) f))
