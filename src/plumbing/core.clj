@@ -174,9 +174,15 @@ if the last retry fails, rethrows."
   "first position threaded operator which short-circuits
    on nil or on exception and returns nil in that case"
   ([x] x)
-  ([x form] (if (seq? form)
-              (with-meta `((with-silent ~(first form)) ~x ~@(next form)) (meta form))
-              `((with-silent ~form) ~x)))
+  ([x form] (if (seq? form) 
+              (with-meta
+		`(try
+		   (~(first form) ~x ~@(next form))
+		   (catch Exception e# nil))
+		(meta form))
+		`(try
+		   (~form ~x)
+		   (catch Exception e# nil))))
   ([x form & more] `(when-let [f# (-?> ~x ~form)] (-?> f# ~@more))))
 
 (defmacro -->> [args f & wrappers]
