@@ -22,7 +22,7 @@
   (are (= (or-else nil 1) 1)
        (= (or-else 1 2) 1)))
 
-(deftest -?>-test 
+(deftest -?>-test
   (are (-?> {:a 1} :a inc) 2
        (-?> {:a 1} inc) nil))
 	
@@ -81,6 +81,10 @@
 (deftest pipeline-compose
   (is (= 10
 	 (-->> [3 4 2 1] + identity identity))))
+
+(deftest default-compose
+  (is (= 10
+	 (-x> 10 (/ 0)))))
 
 (deftest silent-nil
   (is (= [nil 3 4]

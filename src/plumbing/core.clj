@@ -132,6 +132,7 @@
     (apply f args)
     (catch Exception _ nil)))
 
+
 (defn with-timeout
   "tries to execute (apply f args)
    in secs, and throws TimeOut exception
@@ -187,6 +188,11 @@ if the last retry fails, rethrows."
 
 (defmacro -->> [args f & wrappers]
   `(apply (->> ~f ~@wrappers) ~args))
+
+(defmacro -x>
+  [x & args]
+  `(try (or (-> ~x ~@args) ~x)
+	(catch Exception _# ~x)))
 
 (defn set-log-level! [level]
   (-> (org.apache.log4j.Logger/getRootLogger)
