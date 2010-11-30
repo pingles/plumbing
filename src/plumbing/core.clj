@@ -175,7 +175,7 @@ if the last retry fails, rethrows."
    on nil or on exception and returns nil in that case"
   ([x] x)
   ([x form] (if (seq? form)
-              (with-meta `(with-silent ~(first form)) ~x ~@(next form) (meta form))
+              (with-meta `((with-silent ~(first form)) ~x ~@(next form)) (meta form))
               `((with-silent ~form) ~x)))
   ([x form & more] `(when-let [f# (-?> ~x ~form)] (-?> f# ~@more))))
 
