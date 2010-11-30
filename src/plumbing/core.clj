@@ -189,22 +189,37 @@ if the last retry fails, rethrows."
 (defmacro -->> [args f & wrappers]
   `(apply (->> ~f ~@wrappers) ~args))
 
+(defmacro -log>
+  [x & args]
+  `(try
+     (-> ~x ~@args)
+     (catch Exception e#
+       ((logger) e# ~x ~@args))))
+
 (defmacro -x>
   [x & args]
   `(try (or (-> ~x ~@args) ~x)
 	(catch Exception _# ~x)))
 
-(defn set-log-level! [level]
-  (-> (org.apache.log4j.Logger/getRootLogger)
-      (.setLevel
-       (case level
-	     :all org.apache.log4j.Level/ALL
-	     :trace org.apache.log4j.Level/TRACE
-	     :debug org.apache.log4j.Level/DEBUG
-	     :info  org.apache.log4j.Level/INFO
-	     :warn  org.apache.log4j.Level/WARN
-	     :error org.apache.log4j.Level/ERROR
-	     :fatal org.apache.log4j.Level/FATAL))))
+(defn set-log-level!
+  ([level]
+     (set-log-level! [(org.apache.log4j.Logger/getRootLogger)] level))
+  ([loggers level]
+     (let [loggers (map (fn [l] (if (string? l)
+                                  (org.apache.log4j.Logger/getLogger l)
+                                  l))
+                        loggers)]
+       (doseq [l loggers]
+         (.setLevel l (case level
+                            :all org.apache.log4j.Level/ALL
+                            :debug org.apache.log4j.Level/DEBUG
+                            :error org.apache.log4j.Level/ERROR
+                            :fatal org.apache.log4j.Level/FATAL
+                            :info org.apache.log4j.Level/INFO
+                            :off org.apache.log4j.Level/OFF
+                            :trace org.apache.log4j.Level/TRACE
+                            :trace-int org.apache.log4j.Level/TRACE_INT
+                            :warn org.apache.log4j.Level/WARN))))))
 
 (defn atom-logger []
   (let [a (atom "")
