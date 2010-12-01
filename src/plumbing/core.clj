@@ -132,7 +132,7 @@
     (apply f args)
     (catch Exception _ nil)))
 
-(defn with-observer [o f]
+(defn with-obs [o f]
   (fn [& args]
     (o f args)
     (apply f args)))
