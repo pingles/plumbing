@@ -132,6 +132,10 @@
     (apply f args)
     (catch Exception _ nil)))
 
+(defn with-observer [o f]
+  (fn [& args]
+    (o f args)
+    (apply f args)))
 
 (defn with-timeout
   "tries to execute (apply f args)
@@ -261,6 +265,12 @@ if the last retry fails, rethrows."
      (with-ex (logger level) f))
   ([level keys f]
      (with-ex (logger level keys) f)))
+
+(defn with-trace
+  ([f]
+     (fn [& args]
+       (log/trace (format "%s %s" f (prn-str args)))
+       (apply f args))))
 
 ;; Init Logging
 
