@@ -145,8 +145,9 @@
   [secs f]
   (fn  [& args]
     (let [f (future (apply f args))]
-      (.get f (long (* secs 1000))
-	    (java.util.concurrent.TimeUnit/MILLISECONDS)))))
+      (.get f
+            (long secs)
+            (java.util.concurrent.TimeUnit/SECONDS)))))
 
 (defn with-retries [retries f]
   "Retries applying f to args based on the number of retries.
