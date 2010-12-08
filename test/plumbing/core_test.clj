@@ -49,7 +49,8 @@
 	  (throw (java.lang.RuntimeException. "foo")))))))
 
 (defn fake-sleep-fn [secs]
-  (Thread/sleep secs))
+  (fn []
+    (Thread/sleep secs)))
 
 (deftest successfull
   (is (= 10
@@ -82,10 +83,10 @@
          (r2 "http://fake.ass.url")))))
 
 (deftest waiting
-  (let [r-sleep ((with-silent (with-wait 5 #(fake-sleep-fn 6))))
-        r-wait ((with-wait 12 (with-silent #(fake-http-request 1 "got it"))))]
-    (is (= nil r-sleep)
-        (= "got it" r-wait))))
+  (let [sleep-r ((with-silent (with-wait 5 (fake-sleep-fn 6))))
+        wait-r ((with-silent (with-wait 12 (with-silent (fake-http-request 1 "got it")))))]
+    (is (= nil sleep-r)
+        (= "got it" wait-r))))
 
 (deftest pipeline-compose
   (is (= 10
