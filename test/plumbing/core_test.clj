@@ -1,6 +1,6 @@
 (ns plumbing.core-test
   (:use [plumbing core]
-	[clojure test]))
+        [clojure test]))
 
 (deftest map-map-test
   (is (= (map-map inc {:a 0 :b 0})
@@ -48,6 +48,9 @@
 	  (swap! retries inc)
 	  (throw (java.lang.RuntimeException. "foo")))))))
 
+(defn fake-sleep-fn [secs]
+  (Thread/sleep secs))
+
 (deftest successfull
   (is (= 10
     (retry 5 + 4 6))))
@@ -76,7 +79,13 @@
   (is (= "got it"
 	 (r1 "http://fake.ass.url")))
   (is (= "java.lang.Exception: Retry Exception."
-	 (r2 "http://fake.ass.url")))))
+         (r2 "http://fake.ass.url")))))
+
+(deftest waiting
+  (let [r-sleep ((with-silent (with-wait 5 #(fake-sleep-fn 6))))
+        r-wait ((with-wait 12 (with-silent #(fake-http-request 1 "got it"))))]
+    (is (= nil r-sleep)
+        (= "got it" r-wait))))
 
 (deftest pipeline-compose
   (is (= 10

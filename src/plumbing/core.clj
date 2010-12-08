@@ -115,7 +115,7 @@
   ([coll] (find-first identity coll)))
 
 ;; Control
-(defn  retry [retries f & args]
+(defn retry [retries f & args]
   "Retries applying f to args based on the number of retries.
   catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f."
   (try (apply f args)
@@ -126,6 +126,17 @@
 ;;http://dev.clojure.org/display/design/Exception+Handling
 	(throw (java.lang.Exception. "Retry Exception."))
         (apply retry (- retries 1) f args)))))
+
+(defn wait [secs f & args]
+  (let [start-time (System/currentTimeMillis)]
+    (loop []
+      (let [r (apply f args)
+            curr-time (System/currentTimeMillis)
+            secs-count (/ (- curr-time start-time) 1000)]
+        (cond (and (nil? r) (< secs-count secs)) (do (Thread/sleep 5000)
+                                                     (recur))
+              (not (nil? r)) r
+              (>= secs-count secs) (throw (java.lang.Exception. "Wait Exception.")))))))
 
 (defn silent [f & args]
   (try
@@ -143,7 +154,7 @@
    if it fails. Can capture exception
    with try-silent"
   [secs f]
-  (fn  [& args]
+  (fn [& args]
     (let [f (future (apply f args))]
       (.get f
             (long secs)
@@ -155,6 +166,12 @@
 if the last retry fails, rethrows."
   (fn [& args]
     (apply retry retries f args)))
+
+(defn with-wait [secs f]
+  "Retries applying f to args until a non-nil value is returned or the number
+  of seconds"
+  (fn [& args]
+    (apply wait secs f args)))
 
 (defn with-ex [h f]
 "takes a handler h and a function f."
