@@ -175,7 +175,7 @@ if the last retry fails, rethrows."
 
 (defn with-ex [h f]
 "takes a handler h and a function f."
-  (fn  [& args]
+  (fn [& args]
     (try
      (apply f args)
      (catch java.lang.Exception e
