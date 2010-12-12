@@ -138,6 +138,14 @@
               (not (nil? r)) r
               (>= secs-count secs) (throw (java.lang.Exception. "Wait Exception.")))))))
 
+(defn wait-until
+  [cond-f]
+  #(loop []
+     (if (cond-f)
+       nil
+       (do (Thread/sleep 1000)
+           (recur)))))
+
 (defn silent [f & args]
   (try
     (apply f args)
