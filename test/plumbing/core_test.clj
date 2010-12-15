@@ -97,5 +97,12 @@
 	 (-x> 10 (/ 0)))))
 
 (deftest silent-nil
-  (is (= [nil 3 4]
-	 (map (with-silent inc) ["1" 2 3]))))
+  (is (= [nil 3 4] (map (with-silent inc) ["1" 2 3]))))
+
+(deftest waiting-until
+  (let [start (System/currentTimeMillis)]
+    (wait-until (fn [] nil) 1)
+    (is (< (- 1000
+              (- (System/currentTimeMillis) start))
+           500))))
+

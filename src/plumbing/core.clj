@@ -139,12 +139,18 @@
               (>= secs-count secs) (throw (java.lang.Exception. "Wait Exception.")))))))
 
 (defn wait-until
-  [cond-f]
-  #(loop []
-     (if (cond-f)
-       nil
-       (do (Thread/sleep 1000)
-           (recur)))))
+  ([cond-f]
+     (loop []
+       (if (cond-f)
+         nil
+         (do (Thread/sleep 1000)
+             (recur)))))
+  ([cond-f secs]
+     (loop [secs-left secs]
+       (if (or (cond-f) (<= secs-left 0))
+         nil
+         (do (Thread/sleep 1000)
+             (recur (dec secs-left)))))))
 
 (defn silent [f & args]
   (try
