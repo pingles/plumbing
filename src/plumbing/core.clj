@@ -128,6 +128,8 @@
         (apply retry (- retries 1) f args)))))
 
 (defn wait [secs f & args]
+  "Wait until either the given number of seconds has transpired or
+  once f returns a truthy value."
   (let [start-time (System/currentTimeMillis)]
     (loop []
       (let [r (apply f args)
@@ -235,7 +237,7 @@ if the last retry fails, rethrows."
 (defmacro -x>
   [x & args]
   `(try (or (-> ~x ~@args) ~x)
-	(catch Exception _# ~x)))
+        (catch Exception _# ~x)))
 
 (defn set-log-level!
   ([level]
