@@ -232,7 +232,7 @@ if the last retry fails, rethrows."
   `(try
      (-> ~x ~@args)
      (catch Exception e#
-       ((logger) e# ~x ~@args))))
+       ((logger) e# nil nil))))
 
 (defmacro -x>
   [x & args]
