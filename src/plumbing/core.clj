@@ -129,7 +129,7 @@
 
 (defn wait [secs f & args]
   "Wait until either the given number of seconds has transpired or
-  once f returns a truthy value."
+  once f returns a non nil value."
   (let [start-time (System/currentTimeMillis)]
     (loop []
       (let [r (apply f args)
