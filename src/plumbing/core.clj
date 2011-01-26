@@ -99,7 +99,7 @@
   [m f k & ks]
   (let [ks (cons k ks)]
     (merge m (zipmap ks
-                     (map (fn [k] (f (m k))) ks)))))
+                     (map (fn [k] (f (get m k))) ks)))))
 
 ;;
 ;;  error handling defaults 
