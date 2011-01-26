@@ -106,3 +106,7 @@
               (- (System/currentTimeMillis) start))
            500))))
 
+(deftest update-by-test
+  (is (= {:a 1 :b 2 :z 42}
+         (update-by {:a 0 :b 2 :z 41}
+                    inc :a :z))))

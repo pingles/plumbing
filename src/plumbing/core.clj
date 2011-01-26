@@ -90,6 +90,18 @@
   (apply comp (reverse fs)))
 
 ;;
+;; Maps
+;;
+
+(defn update-by
+  "Returns a new map where the value of all ks
+  in map are replaced with (f v)."
+  [m f k & ks]
+  (let [ks (cons k ks)]
+    (merge m (zipmap ks
+                     (map (fn [k] (f (m k))) ks)))))
+
+;;
 ;;  error handling defaults 
 ;;
 
