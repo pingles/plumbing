@@ -320,4 +320,7 @@ if the last retry fails, rethrows."
 
 ;; Init Logging
 
-(org.apache.log4j.BasicConfigurator/configure)
+;; I believe this produces double output in logs as it adds a ConsoleAppender
+;; on the root logger.
+
+;;(org.apache.log4j.BasicConfigurator/configure)
