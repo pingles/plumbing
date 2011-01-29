@@ -101,10 +101,9 @@
     (merge m (zipmap ks
                      (map (fn [k] (f (get m k))) ks)))))
 
-(defn keyword-map
-  "Returns new map where all keys are keywords."
-  [m]
-  (zipmap (map keyword (keys m)) (vals m)))
+(defn convert-keys
+  [kf m]
+  (zipmap (map kf (keys m)) (vals m)))
 
 ;;
 ;;  error handling defaults 
