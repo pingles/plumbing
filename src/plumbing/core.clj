@@ -63,6 +63,17 @@
      `(let [[init# & more#] ~value]
         (reducate [~'% init#] [~name more#] ~body))))
 
+(defn keywordize-map
+  "recursively convert maps in m (including itself)
+   to have keyword keys instead of string"
+  [m]
+  (if (instance? clojure.lang.IPersistentMap m)   
+     (->> m
+	  (map (fn [[k v]]
+		 [(if (string? k) (keyword k) k) (keywordize-map v)]))
+	  (into {}))
+     m))
+
 ;;
 ;; General 
 ;;
@@ -101,9 +112,6 @@
     (merge m (zipmap ks
                      (map (fn [k] (f (get m k))) ks)))))
 
-(defn convert-keys
-  [kf m]
-  (zipmap (map kf (keys m)) (vals m)))
 
 ;;
 ;;  error handling defaults 
