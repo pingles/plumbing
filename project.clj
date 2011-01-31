@@ -4,4 +4,7 @@
                  [org.clojure/clojure-contrib "1.2.0"]
                  [log4j/log4j "1.2.16"]]
   :dev-dependencies [[swank-clojure "1.3.0-SNAPSHOT"]
-                     [lein-clojars "0.5.0"]])
+                     [lein-clojars "0.5.0"]]
+  :repositories  {"apache" "https://repository.apache.org/content/repositories/releases/"
+                  "snapshots" "http://mvn.getwoven.com/repos/woven-public-snapshots"
+                  "releases" "http://mvn.getwoven.com/repos/woven-public-releases"})
