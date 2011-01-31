@@ -188,17 +188,22 @@
     (o f args)
     (apply f args)))
 
+
 (defn with-timeout
   "tries to execute (apply f args)
-   in secs, and throws TimeOut exception
-   if it fails. Can capture exception
-   with try-silent"
+   in secs, and cancels future if it
+   fails to complete in time. The Timeout Exception is still thrown
+   so it needs to be captured via with-ex, try-silent, etc. Other exceptions
+   are simply thrown."
   [secs f]
   (fn [& args]
     (let [f (future (apply f args))]
-      (.get f
-            (long secs)
-            (java.util.concurrent.TimeUnit/SECONDS)))))
+      (try (.get f
+		 (long secs)
+		 (java.util.concurrent.TimeUnit/SECONDS))
+      (catch java.util.concurrent.TimeoutException e
+	(.cancel f true)
+	(throw e))))))
 
 (defn with-retries [retries f]
   "Retries applying f to args based on the number of retries.
