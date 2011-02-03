@@ -100,6 +100,21 @@
   [& fs]
   (apply comp (reverse fs)))
 
+(defn unique-by
+  "returns elements of xs which return unique
+   values according to function f. The representative
+   of each f value is the first element in xs with that value"
+  [f xs]
+  (second
+   (reduce
+      (fn [[ids res] x]
+	(let [id (f x)]
+	  (if (ids id)
+	    [ids res]
+	    [(conj ids id) (conj res x)])))
+      [#{} nil]
+      xs)))
+
 ;;
 ;; Maps
 ;;
@@ -113,14 +128,26 @@
                      (map (fn [k] (f (get m k))) ks)))))
 
 
+;;; Finding things
+
+(defn find-top-k
+  "return top k members of elem
+   according to function f. At no point
+   stores more than k elements in memory
+   at a time."
+  [f k elems]
+  (->> elems
+       (map (juxt f identity))
+       (reduce
+        (fn [top score-elem]          
+          (->>  (conj top score-elem)
+                (sort-by (comp - first))
+                (take k)))
+        nil)
+       (map second)))
 ;;
 ;;  error handling defaults 
 ;;
-
-(defn or-else
-  "returns default value if x is nil"
-  [x default]
-  (if x x default))
 
 
 ;; Core Protocols
