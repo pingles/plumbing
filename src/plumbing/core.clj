@@ -2,7 +2,8 @@
   {:doc "General purpose functions"
    :author "Aria Haghighi <me@aria42.com>. Many fns lifted
    from existing clj-sys and other projects."}
-  (:require [clojure.contrib.logging :as log]))
+  (:require [clojure.contrib.logging :as log])
+  (:use [clojure.contrib.pprint :only [pprint]]))
 
 ;;
 ;;  map functions
@@ -69,9 +70,9 @@
   [m]
   (if (instance? clojure.lang.IPersistentMap m)   
      (->> m
-	  (map (fn [[k v]]
-		 [(if (string? k) (keyword k) k) (keywordize-map v)]))
-	  (into {}))
+          (map (fn [[k v]]
+                 [(if (string? k) (keyword k) k) (keywordize-map v)]))
+          (into {}))
      m))
 
 ;;
@@ -199,11 +200,11 @@
   (fn [& args]
     (let [f (future (apply f args))]
       (try (.get f
-		 (long secs)
-		 (java.util.concurrent.TimeUnit/SECONDS))
-      (catch java.util.concurrent.TimeoutException e
-	(.cancel f true)
-	(throw e))))))
+                 (long secs)
+                 (java.util.concurrent.TimeUnit/SECONDS))
+           (catch java.util.concurrent.TimeoutException e
+             (.cancel f true)
+             (throw e))))))
 
 (defn with-retries [retries f]
   "Retries applying f to args based on the number of retries.
@@ -319,7 +320,7 @@ if the last retry fails, rethrows."
   (fn [e f args]
     (let [l (or level :debug)
 	  m ((apply print-all keys) e f args)]
-      (log/log l m))))
+      (log/log l (with-out-str (pprint m))))))
 
 (defn with-log
   ([f]
