@@ -14,6 +14,12 @@
   (is (= (map-from-keys inc [0 1 2])
 	 {0 1, 1 2, 2 3})))
 
+(deftest unique-by-test
+  (is (= [{:id 1 :data "a"}]
+	 (unique-by :id
+		    [{:id 1 :data "a"}
+		     {:id 1 :data "b"}]))))
+
 (deftest set-to-unit-map-test
   (is (= (set-to-unit-map #{1 2 3})
 	 {1 1 2 1 3 1})))
