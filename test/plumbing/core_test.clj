@@ -116,3 +116,8 @@
   (is (= {:a 1 :b 2 :z 42}
          (update-by {:a 0 :b 2 :z 41}
                     inc :a :z))))
+
+(deftest with-accumulator-test
+  (let [[f a] (with-accumulator conj nil)]
+    (f :a)
+    (is (= @a [:a]))))

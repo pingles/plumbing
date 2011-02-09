@@ -74,6 +74,12 @@
 	  (into {}))
      m))
 
+(defn with-accumulator
+  ([f init-val]
+     (let [a (atom init-val)]
+       [(fn [x] (swap! a f x)) a]))
+  ([f] (with-accumulator f nil)))
+
 ;;
 ;; General 
 ;;
