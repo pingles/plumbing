@@ -14,3 +14,27 @@
 (deftest lazy-flatten-test
   (is (= [1 2 3]
 	   (iterator-seq (flat-iter [[1] [2] [3]])))))
+
+(deftest test-stream-test
+  (let [ts (test-stream (.getBytes "ballsdeep") 10 (byte 4))
+	howdeep? (byte-array 9)]
+    (.read ts howdeep?)
+    (is (= "ballsdeep"
+	   (String. howdeep?)))))
+
+(deftest available-stream-test
+  (let [ts (test-stream
+	    (.getBytes "ballsdeep") 1
+	    (.getBytes "0"))
+	howdeep? (byte-array 9)]
+    (is (= 10
+	   (.available ts)))))
+
+(deftest read-eof-stream-test
+  (let [ts (test-stream
+	    (.getBytes "ballsdeep") 1
+	    (byte 4))
+	howdeep? (byte-array 11)]
+    (.read ts howdeep?)
+    (is (= (str "ballsdeep" (char 4) (char 4))
+	   (String. howdeep?)))))

@@ -1,4 +1,5 @@
-(ns plumbing.streams)
+(ns plumbing.streams
+  (:import java.util.concurrent.atomic.AtomicInteger))
 
 (defn lazy-seq-of-seqs
   ([head-seq tail-seqs]
@@ -27,3 +28,50 @@
 		     v)
 		   (throw (java.util.NoSuchElementException.))))
 	   (remove [this] (throw (java.lang.UnsupportedOperationException.))))))
+
+(defn decrement [cnt len]
+  (let [cur-cnt (.get cnt)]
+    (.compareAndSet cnt
+		    cur-cnt
+		    (if (= -1 cur-cnt)
+		      -1
+		      (- cur-cnt len)))))
+
+(defn test-stream [^bytes data & [num-repeats eof]]
+  (let [cnt (AtomicInteger. (if num-repeats
+			      (* (alength data)
+				 num-repeats)
+			      -1))
+	pos (AtomicInteger. 0)]
+    (proxy [java.io.InputStream] []
+      (available []
+		 (if eof
+		   (+ (.get cnt) 1)
+		   Integer/MAX_VALUE))
+      (close [] nil)
+      (mark [^int read-limit] nil)
+      (markSupported [] false)
+      (read ([]
+	       (let [b (byte-array 1)]
+		 (.read this b)
+		 (aget b 0)))
+	    ([^bytes b]
+	       (.read this b 0 (alength b)))
+	    ([^bytes b off len]
+	       (let [idx (.get pos)
+		     copy-len (min (- (alength b) off)
+				   (- (alength data) idx))
+		     padding-len (- len copy-len)
+		     padding-off (+ off copy-len)]
+		 (System/arraycopy data idx b off copy-len)
+		 (when (> padding-len 0)
+		   (System/arraycopy (byte-array padding-len eof)
+				     0 b padding-off padding-len))
+		 (decrement cnt copy-len)
+		 (.compareAndSet pos
+				 idx
+				 (mod (+ idx copy-len)
+				      (alength data)))
+		 copy-len)))
+      (reset [] nil)
+      (skip [n] 0))))
