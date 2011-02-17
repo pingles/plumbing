@@ -68,12 +68,18 @@
   "recursively convert maps in m (including itself)
    to have keyword keys instead of string"
   [m]
-  (if (instance? clojure.lang.IPersistentMap m)   
-     (->> m
-          (map (fn [[k v]]
-                 [(if (string? k) (keyword k) k) (keywordize-map v)]))
-          (into {}))
-     m))
+  (cond
+   (instance? clojure.lang.IPersistentMap m)
+     (into {}
+      (map 
+       (fn [[k v]]
+	 [(if (string? k) (keyword k) k) (keywordize-map v)])
+       m))
+   (instance? clojure.lang.IPersistentList m)
+     (map keywordize-map m)
+   (instance? clojure.lang.IPersistentVector m)
+     (into [] (map keywordize-map m))
+   :else m))
 
 (defn with-accumulator
   ([f init-val]
