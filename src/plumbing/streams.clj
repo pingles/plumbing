@@ -42,11 +42,15 @@
 			      (* (alength data)
 				 num-repeats)
 			      -1))
-	pos (AtomicInteger. 0)]
+	pos (AtomicInteger. 0)
+	eof-pos (AtomicInteger. 0)
+	eof-cnt (AtomicInteger. (if eof
+				  (alength eof)
+				  -1))]
     (proxy [java.io.InputStream] []
       (available []
 		 (if eof
-		   (+ (.get cnt) 1)
+		   (+ (.get cnt) (.get eof-cnt))
 		   Integer/MAX_VALUE))
       (close [] nil)
       (mark [^int read-limit] nil)
@@ -59,19 +63,31 @@
 	       (.read this b 0 (alength b)))
 	    ([^bytes b off len]
 	       (let [idx (.get pos)
+		     eof-idx (.get eof-pos)
+		     eof-remaining (.get eof-cnt)
 		     copy-len (min (- (alength b) off)
 				   (- (alength data) idx))
 		     padding-len (- len copy-len)
-		     padding-off (+ off copy-len)]
+		     eof-len (if (> padding-len 0)
+			       (if (> padding-len
+				      eof-remaining)
+				 eof-remaining
+				 padding-len)
+			       0)]
 		 (System/arraycopy data idx b off copy-len)
-		 (when (> padding-len 0)
-		   (System/arraycopy (byte-array padding-len eof)
-				     0 b padding-off padding-len))
 		 (decrement cnt copy-len)
 		 (.compareAndSet pos
 				 idx
 				 (mod (+ idx copy-len)
 				      (alength data)))
+		 (when (> eof-len 0)
+		   (System/arraycopy
+		    eof eof-idx b (+ off copy-len) eof-len)
+		   (.compareAndSet eof-pos
+				   eof-idx
+				   (mod (+ eof-idx eof-len)
+					(alength eof)))
+		   (decrement eof-cnt eof-len))
 		 copy-len)))
       (reset [] nil)
       (skip [n] 0))))

@@ -16,7 +16,7 @@
 	   (iterator-seq (flat-iter [[1] [2] [3]])))))
 
 (deftest test-stream-test
-  (let [ts (test-stream (.getBytes "ballsdeep") 10 (byte 4))
+  (let [ts (test-stream (.getBytes "ballsdeep") 10 (.getBytes "4"))
 	howdeep? (byte-array 9)]
     (.read ts howdeep?)
     (is (= "ballsdeep"
@@ -33,8 +33,8 @@
 (deftest read-eof-stream-test
   (let [ts (test-stream
 	    (.getBytes "ballsdeep") 1
-	    (byte 4))
+	    (.getBytes "0\n"))
 	howdeep? (byte-array 11)]
     (.read ts howdeep?)
-    (is (= (str "ballsdeep" (char 4) (char 4))
+    (is (= (str "ballsdeep0\n")
 	   (String. howdeep?)))))
