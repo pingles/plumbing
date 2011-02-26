@@ -183,12 +183,9 @@
   "Retries applying f to args based on the number of retries.
   catches generic Exception, so if you want to do things with other exceptions, you must do so in the client code inside f."
   (try (apply f args)
-    (catch java.lang.Exception _
+    (catch java.lang.Exception e
       (if (zero? retries)
-;;TODO: decide on c.c.condition or roll our own.  throw a proper new RetryException wrapping the nested exception.
-;;http://groups.google.com/group/clojure-dev/browse_thread/thread/734ee59f6cbc1b55
-;;http://dev.clojure.org/display/design/Exception+Handling
-	(throw (java.lang.Exception. "Retry Exception."))
+	(throw e)
         (apply retry (- retries 1) f args)))))
 
 (defn wait [secs f & args]
@@ -257,6 +254,11 @@ if the last retry fails, rethrows."
   of seconds"
   (fn [& args]
     (apply wait secs f args)))
+
+(defn cause [e]
+  (if-let [c (.getCause e)]
+    (recur c)
+    (.getName (class e))))
 
 (defn with-ex [h f]
 "takes a handler h and a function f."
@@ -333,6 +335,14 @@ if the last retry fails, rethrows."
 	l (fn [e & args] (swap! a (fn [x] (str e))))]
     [a l]))
 
+(defn atom-counter []
+  (let [s (atom {})
+	update (fn [e f args]
+		 (swap! s (fn [old] (update-in
+				     old [(str e)]
+				     (fn [x] (if x (inc x) 1))))))]
+    [s update]))
+
 ;;TODO: we should probably smartly filter the stack traces.
 (defn print-all [& keys]
   (fn [e f args]
@@ -375,9 +385,5 @@ if the last retry fails, rethrows."
        (log/trace (format "%s %s" f (prn-str args)))
        (apply f args))))
 
-;; Init Logging
-
-;; I believe this produces double output in logs as it adds a ConsoleAppender
-;; on the root logger.
-
+;; I believe this produces double output in logs as it adds a ConsoleAppender on the root logger.
 ;;(org.apache.log4j.BasicConfigurator/configure)

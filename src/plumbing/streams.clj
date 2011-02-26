@@ -37,6 +37,21 @@
 		      -1
 		      (- cur-cnt len)))))
 
+(defn wrap-copy [from from-idx len to to-idx]
+  (let [remain (min len
+		    (- (alength from) from-idx))
+	next-len (- len remain)]
+    (System/arraycopy from from-idx to
+		      to-idx remain)
+    (when (> next-len 0)
+      (recur from
+	     (mod
+	      (+ from-idx remain)
+	      (alength from))
+	     next-len
+	     to
+	     (+ to-idx remain)))))
+
 (defn test-stream [^bytes data & [num-repeats eof]]
   (let [cnt (AtomicInteger. (if num-repeats
 			      (* (alength data)
@@ -63,23 +78,25 @@
 	       (.read this b 0 (alength b)))
 	    ([^bytes b off len]
 	       (let [idx (.get pos)
+		     remaining (.get cnt)
 		     eof-idx (.get eof-pos)
 		     eof-remaining (.get eof-cnt)
-		     copy-len (min (- (alength b) off)
-				   (- (alength data) idx))
+		     copy-len (max 0
+				   (min remaining
+					(- (alength b) off)
+					(- (alength data) idx)))
 		     padding-len (- len copy-len)
 		     eof-len (if (> padding-len 0)
-			       (if (> padding-len
-				      eof-remaining)
-				 eof-remaining
-				 padding-len)
+			       (min eof-remaining
+				    padding-len)
 			       0)]
-		 (System/arraycopy data idx b off copy-len)
-		 (decrement cnt copy-len)
-		 (.compareAndSet pos
-				 idx
-				 (mod (+ idx copy-len)
-				      (alength data)))
+		 (when (> copy-len 0)
+		   (System/arraycopy data idx b off copy-len)
+		   (decrement cnt copy-len)
+		   (.compareAndSet pos
+				   idx
+				   (mod (+ idx copy-len)
+					(alength data))))
 		 (when (> eof-len 0)
 		   (System/arraycopy
 		    eof eof-idx b (+ off copy-len) eof-len)

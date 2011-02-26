@@ -40,10 +40,28 @@
 
 (deftest time-out
   (let [[a l] (atom-logger)
-	f (with-ex l
-	    (with-timeout 1 #(Thread/sleep 10000)))
+	f (->>
+	   #(Thread/sleep 10000)
+	   (with-timeout 1)
+	   (with-ex l))
 	_ (f)]
   (is (= "java.util.concurrent.TimeoutException" @a))))
+
+(deftest time-out-log-and-store
+  (let [[a l] (atom-logger)
+	s (atom {})
+	update (fn [e f args]
+		 (swap! s (fn [old] (update-in
+				     old [(str e)]
+				     (fn [x] (if x (inc x) 1))))))
+	f (->>
+	   #(Thread/sleep 10000)
+	   (with-timeout 1)
+	   (with-ex (juxt l update)))
+	_ (f)]
+    (is (= "java.util.concurrent.TimeoutException" @a))
+    (is (= ["java.util.concurrent.TimeoutException" 1]
+	   (first @s)))))
 
 (defn fake-http-request [n result]
   (let [retries (atom 0)] 
@@ -68,7 +86,7 @@
 	     (with-retries 5 /))
         rs (with-silent
 	     (with-retries 5 /))]  
-  (is (= "java.lang.Exception: Retry Exception."
+  (is (= "java.lang.ArithmeticException: Divide by zero"
     (r 4 0)))
   (is (= nil
     (rs 4 0)))))
@@ -85,7 +103,7 @@
 	     (with-retries 5 (fake-http-request 6 "got it")))]
   (is (= "got it"
 	 (r1 "http://fake.ass.url")))
-  (is (= "java.lang.Exception: Retry Exception."
+  (is (= "java.lang.RuntimeException: foo"
          (r2 "http://fake.ass.url")))))
 
 (deftest waiting
