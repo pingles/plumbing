@@ -11,6 +11,20 @@
     (is (= 3 g3))
     (is (= nil (f3)))))
 
+(deftest generating-a-seq-with-empties
+  (let [[g1 f1] (lazy-seq-of-seqs [[1] [] [3]])
+	[g2 f2] (f1)
+	done (f2)]
+    (is (= 1 g1))
+    (is (= 3 g2))
+    (is (= nil done))))
+
+(deftest generating-a-seq-with-bookend-empties
+  (let [[g1 f1] (lazy-seq-of-seqs [[] [3] []])
+	done (f1)]
+    (is (= 3 g1))
+    (is (= nil done))))
+
 (deftest lazy-flatten-test
   (is (= [1 2 3]
 	   (iterator-seq (flat-iter [[1] [2] [3]])))))
