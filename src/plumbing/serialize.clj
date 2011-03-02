@@ -177,3 +177,8 @@
       from-var
       (cons args)
       json/generate-string))
+
+(defn pr-java [x]
+  (cond
+   (instance? java.lang.Enum x) (str x)
+   :default x))
