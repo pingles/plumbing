@@ -5,8 +5,9 @@
 	[clojure.string :only [lower-case]]
 	[plumbing.serialize]
 	[plumbing.core :only [silent]]
-	[clojure.contrib.server-socket :only [create-server
-                                              close-server]])
+	[clojure.contrib.server-socket
+	 :only [create-server
+		close-server]])
   (:import clojure.lang.RT
 	   (java.net InetAddress Socket)
 	   (java.nio ByteBuffer)
@@ -21,24 +22,19 @@
        reader
        f
        (writer out))
-  (.flush os))
+  (.flush out))
 
-(defn start [fun
+(defn start [f
              & {:keys [port backlog bind-addr]
                 :or {port 4444
                      backlog 50
                      bind-addr (InetAddress/getByName "127.0.0.1")}}]
-  (let [server (create-server port fun backlog bind-addr)]
+  (let [server (create-server port f backlog bind-addr)]
     server))
 
-(defn client [msg reader writer
-	      ^InputStream in
-	      ^OutputStream out]
-  (writer out cmd)
-  (reader in))
-
-(defn client-socket [^String host ^Integer port f]
+(defn client [^String host ^Integer port reader writer msg]
   (let [client (Socket. (InetAddress/getByName host) port)
-        os (.getOutputStream client)
-        ins (.getInputStream client)]
-    (f ins os)))
+        out (.getOutputStream client)
+        in (.getInputStream client)]
+    (writer out msg)
+    (reader in)))
