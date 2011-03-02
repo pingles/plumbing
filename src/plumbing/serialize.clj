@@ -15,6 +15,21 @@
 		    BufferedReader InputStreamReader
 		    PrintWriter)))
 
+(defprotocol Serializer
+  "A protocol to convert between Clojure values
+   and byte arrays."
+  (^bytes serialize [this x])
+  (deserialize [this ^bytes bs]))
+
+(defn string-serializer
+  [& {:keys [encoding]
+      :or {encoding "UTF8"}}]
+  (reify Serializer
+         (serialize [this x]
+                    (.getBytes (pr-str x) encoding))
+         (deserialize [this bs]
+                      (read-string (String. ^"[B" bs encoding)))))
+
 (defn cr? [x]
   (= 13 x))
 
@@ -59,7 +74,6 @@
       (Integer/parseInt (.substring l 1))
       (throw (Exception. "Error parsing arg length.")))))
 
-;; TODO: bubble up serialization
 (defn read-arg [^InputStream is]
   (let [arg-len (read-arg-len is)
         buf (byte-array arg-len)]
@@ -72,12 +86,10 @@
         args (repeatedly arg-count #(read-arg is))]
     args))
 
-
 (defn write-arg-count [^OutputStream os c]
   (.write os (.getBytes
               (format "*%d\r\n" c))))
 
-;; TODO: bubble up serialization
 (defn write-arg [^OutputStream os ^String arg]
   (let [arg-len (.length arg)]        
     (.write os (.getBytes
@@ -88,53 +100,6 @@
   (let [num-args (count args)]
     (write-arg-count os num-args)
     (doseq [arg args] (write-arg os (pr-str arg)))))
-
-(defprotocol Serializer
-  (freeze [this obj] "freeze obj to bytes")
-  (thaw [this bytes] "convert bytes to object"))
-
-(defrecord DefaultStringSerializer []
-  Serializer
-  (freeze [this obj] (.getBytes (prn-str obj)))
-  (thaw [this bytes] (read-string (String. ^"[B" bytes))))
-
-(defn client-socket [^String host ^Integer port f]
-  (let [client (Socket. (InetAddress/getByName host) port)
-        os (.getOutputStream client)
-        ins (.getInputStream client)]
-    (f ins os)))
-
-(defn start [fun
-             & {:keys [port backlog bind-addr]
-                :or {port 4444
-                     backlog 50
-                     bind-addr (InetAddress/getByName "127.0.0.1")}}]
-  (let [server (create-server port fun backlog bind-addr)]
-    server))
-
-(defn req [cmd]
-  (fn [^InputStream ins
-       ^OutputStream os]
-    (write-msg os cmd)
-    (-> (read-msg ins)
-        first)))
-
-(defn handler [f]
-  "Map of buckets."
-  (fn [^InputStream is ^OutputStream os]
-    (let [i (read-msg is)]
-      (write-msg os (f i))
-      (.flush os))))
-
-(defn server [f ^InputStream is ^OutputStream os]
-  (let [reader (BufferedReader. (InputStreamReader. is))
-	writer (PrintWriter. os)]
-    (let [input (read-string (.readLine reader))
-	     resp (f input)]
-      (.println os (pr-str resp))
-      (.flush os))))
-
-(def default-serializer   (DefaultStringSerializer.))
 
 (defn from-var
   "convert fn variable to [ns-name fn-name] string pair"
@@ -163,9 +128,9 @@
   "receive* message represented as a serialized
    clojure data object"
   [serialize-impl]
-  (fn [msg] (recieve* (thaw serialize-impl msg))))
+  (fn [msg] (recieve* (deserialize serialize-impl msg))))
 
-(def recieve-clj (mk-recieve-clj default-serializer))
+(def recieve-clj (mk-recieve-clj (string-serializer)))
 
 (defn recieve-json
   "receive* message presented as a json string"
@@ -177,7 +142,7 @@
   [serialize-impl]
   (comp eval (mk-recieve-clj serialize-impl)))
 
-(def clj-worker (mk-clj-worker default-serializer))
+(def clj-worker (mk-clj-worker (string-serializer)))
 
 (defvar json-worker
   (comp eval recieve-json)
@@ -188,12 +153,12 @@
    function evaluation as a clojure object message"
   [serialize-impl]
   (fn [fn-var & args]
-    (freeze serialize-impl
+    (serialize serialize-impl
      (-> fn-var
 	 from-var
 	 (cons args)))))
 
-(defvar send-clj (mk-send-clj default-serializer)
+(defvar send-clj (mk-send-clj (string-serializer))
   "default mk-send-clj with default serialization")
 
 (defn send-json

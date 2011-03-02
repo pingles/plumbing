@@ -7,10 +7,11 @@
        (if head-of-head
 	 [head-of-head
 	  #(lazy-seq-of-seqs (rest head-seq) tail-seqs)]
-	 (let [new-head (first tail-seqs)]
+	 (let [new-tail (drop-while empty? tail-seqs)
+	       new-head (first new-tail)]
 	   (if new-head
 	     [(first new-head)
-	      #(lazy-seq-of-seqs (rest new-head) (rest tail-seqs))]
+	      #(lazy-seq-of-seqs (rest new-head) (rest new-tail))]
 	     nil)))))
   ([seq-of-seqs]
      (lazy-seq-of-seqs (first seq-of-seqs) (rest seq-of-seqs))))
