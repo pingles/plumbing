@@ -4,11 +4,8 @@
   (:use	[clojure.contrib.def :only [defvar]]
 	[clojure.string :only [lower-case]]
 	[plumbing.serialize]
-	[plumbing.core :only [silent]]
-	[clojure.contrib.server-socket :only [create-server
-                                              close-server]])
+	[plumbing.core :only [silent]])
   (:import clojure.lang.RT
-	   (java.net InetAddress Socket)
 	   (java.nio ByteBuffer)
 	   (java.util Arrays)
 	   (java.io InputStream OutputStream
@@ -29,6 +26,18 @@
                     (.getBytes (pr-str x) encoding))
          (deserialize [this bs]
                       (read-string (String. ^"[B" bs encoding)))))
+
+(defn read-str-msg [^InputStream in]
+  (-> in
+      (InputStreamReader.)
+      (BufferedReader.)
+      (.readLine)
+      read-string))
+
+(defn write-str-msg [^OutputStream out msg]
+  (-> out
+      (PrintWriter.)
+      (.println (pr-str msg))))
 
 (defn cr? [x]
   (= 13 x))
