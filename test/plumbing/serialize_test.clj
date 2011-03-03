@@ -2,7 +2,8 @@
   (:use plumbing.serialize
 	clojure.test)
   (:import (org.apache.commons.io IOUtils)
-           (java.io ByteArrayOutputStream)))
+           (java.io ByteArrayOutputStream)
+           (java.util.concurrent TimeUnit)))
 
 (deftest read-ln-test
   (is (= "GET"
@@ -78,4 +79,8 @@
 
 (deftest send-and-recieve-json
   (is (= 6
-	 (eval (recieve-json (send-json #'add 1 2 3))))))
+         (eval (recieve-json (send-json #'add 1 2 3))))))
+
+(deftest pr-java-test
+  (is (= "SECONDS"
+         (pr-java TimeUnit/SECONDS))))

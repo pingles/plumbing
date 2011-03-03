@@ -69,6 +69,11 @@
             (.put bb (ubyte cur-val))
             (recur cur-val)))))))
 
+(defn pr-java [x]
+  (cond
+   (instance? java.lang.Enum x) (str x)
+   :default x))
+
 (defn arg-count? [^String x]
   (.startsWith x "*"))
 
@@ -109,10 +114,11 @@
                 (format "$%d\r\n%s\r\n"
                         arg-len arg)))))
 
+;; TODO: Move pr-java out into own composable fn
 (defn write-msg [^OutputStream os args]
   (let [num-args (count args)]
     (write-arg-count os num-args)
-    (doseq [arg args] (write-arg os (pr-str arg)))))
+    (doseq [arg args] (write-arg os ((comp pr-str pr-java) arg)))))
 
 (defn from-var
   "convert fn variable to [ns-name fn-name] string pair"
