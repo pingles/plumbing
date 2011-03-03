@@ -36,4 +36,5 @@
         out (.getOutputStream client)
         in (.getInputStream client)]
     (writer out msg)
-    (reader in)))
+    (reader in)
+    (.close client)))
