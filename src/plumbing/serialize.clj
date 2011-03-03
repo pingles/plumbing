@@ -45,7 +45,7 @@
     (read-string v)))
 
 (defn write-str-msg [^PrintWriter wtr msg]
-  (.println wtr (pr-str (pr-java msg)))
+  (.println wtr (pr-str (map pr-java msg)))
   (.flush wtr))
 
 (defn cr? [x]
