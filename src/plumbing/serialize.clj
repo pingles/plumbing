@@ -88,10 +88,23 @@
       (Integer/parseInt (.substring l 1))
       (throw (Exception. "Error parsing arg length.")))))
 
+;; NOT TESTED!
+(defn read-fully [^InputStream is
+                  ^bytes buf]
+  (let [len (alength buf)]
+    (loop [idx 0]
+      (if (= idx len)
+        nil
+        (let [num-read (.read is
+                              buf
+                              idx
+                              (- len idx))]
+          (recur (+ idx num-read)))))))
+
 (defn read-arg [^InputStream is]
   (let [arg-len (read-arg-len is)
         buf (byte-array arg-len)]
-    (.read is buf)
+    (read-fully is buf)
     (.skip is 2)
     (read-string (String. buf))))
 
