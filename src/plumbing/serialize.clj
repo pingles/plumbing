@@ -27,17 +27,26 @@
          (deserialize [this bs]
                       (read-string (String. ^"[B" bs encoding)))))
 
-(defn read-str-msg [^InputStream in]
+(defn pr-java [x]
+  (cond
+   (instance? java.lang.Enum x) (str x)
+   :default x))
+
+(defn reader [^InputStream in]
   (-> in
       (InputStreamReader.)
-      (BufferedReader.)
-      (.readLine)
-      read-string))
+      (BufferedReader.)))
 
-(defn write-str-msg [^OutputStream out msg]
-  (-> out
-      (PrintWriter.)
-      (.println (pr-str msg))))
+(defn writer [^OutputStream out]
+  (PrintWriter. out))
+
+(defn read-str-msg [^InputStreamReader rdr]
+  (if-let [v  (.readLine rdr)]
+    (read-string v)))
+
+(defn write-str-msg [^PrintWriter wtr msg]
+  (.println wtr (pr-str (map pr-java msg)))
+  (.flush wtr))
 
 (defn cr? [x]
   (= 13 x))
@@ -64,11 +73,6 @@
           (do
             (.put bb (ubyte cur-val))
             (recur cur-val)))))))
-
-(defn pr-java [x]
-  (cond
-   (instance? java.lang.Enum x) (str x)
-   :default x))
 
 (defn arg-count? [^String x]
   (.startsWith x "*"))

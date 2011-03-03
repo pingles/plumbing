@@ -1,13 +1,6 @@
 (ns plumbing.core
-  {:doc "General purpose functions"
-   :author "Aria Haghighi <me@aria42.com>. Many fns lifted
-   from existing clj-sys and other projects."}
   (:require [clojure.contrib.logging :as log])
   (:use [clojure.contrib.pprint :only [pprint]]))
-
-;;
-;;  map functions
-;;
 
 (defn map-map
   "returns map k -> (f v) for [k v] in map m"

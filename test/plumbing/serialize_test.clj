@@ -25,11 +25,16 @@
                          "$5\r\n\"GET\"\r\n$3\r\nkey\r\n"))))))
 
 (deftest read-msg-test
-  (let [[cmd & args] (read-msg (IOUtils/toInputStream
-                                "*2\r\n$5\r\n\"GET\"\r\n$5\r\n\"key\"\r\n"))]
+  (let [in (IOUtils/toInputStream
+                                "*2\r\n$5\r\n\"GET\"\r\n$5\r\n\"key\"\r\n*2\r\n$5\r\n\"GET\"\r\n$5\r\n\"key\"\r\n")
+	[cmd & args] (read-msg in)
+	[cmd2 & args2] (read-msg in)]
     (is (= "GET" cmd))
+    (is (= "GET" cmd2))
     (is (= (list "key")
-           args))))
+           args))
+    (is (= (list "key")
+           args2))))
 
 (deftest write-arg-count-test
   (let [baos (doto (ByteArrayOutputStream.)
