@@ -29,8 +29,7 @@
                 :or {port 4444
                      backlog 50
                      bind-addr (InetAddress/getByName "127.0.0.1")}}]
-  (let [server (create-server port f backlog bind-addr)]
-    server))
+  (create-server port f backlog bind-addr))
 
 (defn client [^String host ^Integer port reader writer msg]
   (let [client (Socket. (InetAddress/getByName host) port)

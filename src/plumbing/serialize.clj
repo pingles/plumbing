@@ -27,17 +27,21 @@
          (deserialize [this bs]
                       (read-string (String. ^"[B" bs encoding)))))
 
-(defn read-str-msg [^InputStream in]
+(defn reader [^InputStream in]
   (-> in
       (InputStreamReader.)
-      (BufferedReader.)
-      (.readLine)
-      read-string))
+      (BufferedReader.)))
 
-(defn write-str-msg [^OutputStream out msg]
-  (-> out
-      (PrintWriter.)
-      (.println (pr-str msg))))
+(defn writer [^OutputStream out]
+  (PrintWriter. out))
+
+(defn read-str-msg [^InputStreamReader rdr]
+  (if-let [v  (.readLine rdr)]
+    (read-string v)))
+
+(defn write-str-msg [^PrintWriter wtr msg]
+  (.println wtr (pr-str msg))
+  (.flush wtr))
 
 (defn cr? [x]
   (= 13 x))
