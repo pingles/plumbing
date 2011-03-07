@@ -38,7 +38,7 @@
       (BufferedReader.)))
 
 (defn writer [^OutputStream out]
-  (PrintWriter. out))
+  (PrintWriter. out true))
 
 (defn read-str-msg [^InputStreamReader rdr]
   (if-let [v  (.readLine rdr)]
