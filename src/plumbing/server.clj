@@ -2,19 +2,18 @@
   (:require [clj-json [core :as json]]
             [clojure.contrib.logging :as log])
   (:use	[clojure.contrib.def :only [defvar]]
-	[clojure.string :only [lower-case]]
-	[plumbing.serialize]
-	[plumbing.core :only [silent]]
-	[clojure.contrib.server-socket
-	 :only [create-server
-		close-server]])
+        [clojure.string :only [lower-case]]
+        [plumbing.serialize]
+        [plumbing.core :only [silent]])
   (:import clojure.lang.RT
-	   (java.net InetAddress Socket)
-	   (java.nio ByteBuffer)
-	   (java.util Arrays)
-	   (java.io InputStream OutputStream
-		    BufferedReader InputStreamReader
-		    PrintWriter)))
+           (java.net InetAddress Socket
+                     ServerSocket SocketException)
+           (java.nio ByteBuffer)
+           (java.util Arrays)
+           (java.util.concurrent Executors)
+           (java.io InputStream OutputStream
+                    BufferedReader InputStreamReader
+                    PrintWriter)))
 
 (defn server [f reader writer
 	      ^InputStream in ^OutputStream out]
@@ -24,12 +23,25 @@
        (writer out))
   (.flush out))
 
-(defn start [f
-             & {:keys [port backlog bind-addr]
-                :or {port 4444
-                     backlog 50
-                     bind-addr (InetAddress/getByName "127.0.0.1")}}]
-  (create-server port f backlog bind-addr))
+(defn start [f port ^String bind-addr
+             & {:keys [backlog num-threads]
+                :or {backlog 128
+                     num-threads 200}}]
+  (let [ss (ServerSocket. port backlog (InetAddress/getByName bind-addr))
+        pool (Executors/newFixedThreadPool num-threads)]
+    (future (loop []
+              (if-not (.isClosed ss)
+                (do (try
+                      (let [s (.accept ss)]
+                        (.submit pool (cast Runnable #(f s))))
+                      (catch SocketException e
+                        (.printStackTrace e)))
+                    (recur))
+                (.shutdownNow pool))))
+    ss))
+
+(defn stop [^ServerSocket ss]
+  (.close ss))
 
 (defn client [^String host ^Integer port reader writer msg]
   (let [client (Socket. (InetAddress/getByName host) port)
