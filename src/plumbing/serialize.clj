@@ -1,6 +1,7 @@
 (ns plumbing.serialize
   (:require [clj-json [core :as json]]
-            [clojure.contrib.logging :as log])
+            [clojure.contrib.logging :as log]
+	    [clojure.java.io :only [reader,writer]])
   (:use	[clojure.contrib.def :only [defvar]]
 	[clojure.string :only [lower-case]]
 	[plumbing.serialize]
@@ -9,6 +10,7 @@
 	   (java.nio ByteBuffer)
 	   (java.util Arrays)
 	   (java.io InputStream OutputStream
+		    Writer
 		    BufferedReader InputStreamReader
 		    PrintWriter)))
 
@@ -32,10 +34,8 @@
    (instance? java.lang.Enum x) (str x)
    :default x))
 
-(defn reader [^InputStream in]
-  (-> in
-      (InputStreamReader.)
-      (BufferedReader.)))
+(defn reader [x]
+  (clojure.java.io/reader x :encoding "UTF-8"))
 
 (defn writer [^OutputStream out]
   (PrintWriter. out true))
@@ -44,8 +44,8 @@
   (if-let [v  (.readLine rdr)]
     (read-string v)))
 
-(defn write-str-msg [^PrintWriter wtr msg]
-  (.println wtr (pr-str (map pr-java msg)))
+(defn write-str-msg [^Writer wtr msg]
+  (.println (PrintWriter. wtr) (pr-str (map pr-java msg)))
   (.flush wtr))
 
 (defn cr? [x]
