@@ -2,7 +2,7 @@
   :description "General purpose functions for clj-sys projects"
   :dependencies [[org.clojure/clojure "1.2.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
-                 [woven/clj-json "0.3.2"]
+                 [woven/clj-json "0.3.2-SNAPSHOT"]
                  [log4j/log4j "1.2.16"]
                  [commons-io "2.0.1"]]
   :dev-dependencies [[swank-clojure "1.3.0-SNAPSHOT"]
