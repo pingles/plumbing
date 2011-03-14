@@ -16,8 +16,10 @@
 		    BufferedReader InputStreamReader
 		    PrintWriter)))
 
-(defn server [f reader writer
-	      ^InputStream in ^OutputStream out]
+(defn server
+  "execute fn f on messager obtained from reader on InputStream in
+  and write f response to writer and finally to OutputStream out"
+  [f reader writer ^InputStream in ^OutputStream out]	      
   (->> in
        reader
        f
