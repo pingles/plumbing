@@ -37,8 +37,8 @@
 (defn reader [x]
   (clojure.java.io/reader x :encoding "UTF-8"))
 
-(defn writer [x]
-  (clojure.java.io/writer x :encoding "UTF-8"))
+(defn writer [^OutputStream out]
+  (PrintWriter. out true))
 
 (defn read-str-msg [^InputStreamReader rdr]
   (if-let [v  (.readLine rdr)]
